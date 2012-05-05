@@ -5,7 +5,9 @@ var io = require('socket.io').listen(app);
 var EventEmitter = require('events').EventEmitter;
 var emitter = new EventEmitter();
 var port =  process.env.PORT || config.port || 3000;
-var hamljs = require('hamljs');
+
+
+var wrapper = require('bigode.js').handlebars();
 
 var chats = {};
 
@@ -14,14 +16,16 @@ io.configure(function () {
     io.set("polling duration", 10);
 });
 
-//io.sockets.on('connection', default_socket );
-
 var default_socket = function( socket ){
     console.log('Connection!');
 
-    var message = hamljs.render('.message User connected');
-    socket.emit('join', message );
-    socket.broadcast.emit('join', message );
+    var chat = socket.namespace.name.split('/',3).pop();
+    socket.set('chatroom', chat);
+
+    load_backlog( chat, socket );
+
+    var message = 'User connected';
+    log_message( 'join', message, chat, socket);
 
     socket.on('post', function( data ) {
         if(!data){return;}
@@ -33,14 +37,13 @@ var default_socket = function( socket ){
             return; // don't handle posts if no nickname and chatroom are defined
         }
         var message = nickname + " : " + data;
-        message = hamljs.render('.message ' + message );
-        socket.emit('message', message); // Send message to sender
-        socket.broadcast.emit('message', message ); // Send message to everyone BUT sender
+        log_message( 'message', message, chat, socket);
     });
 
     socket.on('disconnect', function() {
-        var message = hamljs.render('.message User disconnected');
-        socket.broadcast.emit('part', message );
+        var message = 'User disconnected';
+        log_message( 'part', message, chat, socket);
+
     });
 
     socket.on('set nickname', function (name) {
@@ -50,30 +53,53 @@ var default_socket = function( socket ){
 
 };
 
-// haml
-app.register('.haml', hamljs );
+function log_message(type, message, chat, socket){
+    chats[chat]['log'].push( [type, message] );
+    socket.emit('join', message );
+    socket.broadcast.emit('join', message );
+    emitter.emit(type, message);
+}
+
+function load_backlog( chat, socket ){
+    var log = chats[chat]['log'];
+    console.log("backlog ", chat, log);
+    for (m in log){
+        x = log[m];
+        socket.emit(x[0],x[1]);
+    }
+};
+    
+
+
+emitter.addListener('post', function(data){
+    
+
+});
+
 app.configure(function() {
     app.set('views', __dirname + '/views');
     app.use(express.bodyParser());
     app.use(express.methodOverride());
     app.use(app.router);
     app.use(express.static(__dirname + '/public'));
+    app.register('.hbs', wrapper);   // <<<-- using wrapper to process .hbs files
 });
 
 app.get('/chat/:id', function(req, res){
     var chatroom = req.params.id;
-    res.render('chat.haml', {
+    res.render('chat.hbs', {
         title: config.title + " - " + chatroom
     } );
     if (!chats[chatroom]){
-        
         start_chatroom( chatroom );
     }
 });
 
 function start_chatroom( id ){
     var chat = io.of('/chat/' + id).on('connection', default_socket );
-    chats[id] = chat;
+    chats[id] = { 
+        chat: chat,
+        log: [] };
 }
 
 

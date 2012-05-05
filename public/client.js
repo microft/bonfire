@@ -1,17 +1,20 @@
 var socket = io.connect(window.location.pathname);
 
 socket.on( 'join', function( data ) {
-    $('#conversation').append( data );
+    newMessage(data);
 });
 
 socket.on( 'part', function( data ) {
-    $('#conversation').append( data );
+    newMessage(data);
 });
 
 socket.on( 'message', function( data ) {
-    $('#conversation').append(data);
+    newMessage(data);
 });
 
+function newMessage( message ) {
+    $('#conversation').append('<div class="message">' + message + '</div>');
+}
 
 function post(msg){
     socket.emit('post', msg);
