@@ -12,7 +12,7 @@ var wrapper = require('bigode.js').handlebars();
 var chats = {};
 
 io.configure(function () {
-    io.set('transports', ['websocket', 'flashsocket', 'xhr-polling']);
+    io.set('transports', ['websocket', 'xhr-polling']);
     io.set("polling duration", 10);
 });
 
