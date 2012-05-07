@@ -5,7 +5,7 @@
   "dependencies": {
     "express": "",
     "socket.io": "",
-    "bigodejs" : "https://github.com/microft/bigode.js/zipball/master",
+    "bigodejs" : "https://github.com/microft/bigode.js/tarball/master",
     "handlebars" : ""
   }
 }
