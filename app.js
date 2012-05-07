@@ -55,8 +55,8 @@ var default_socket = function( socket ){
 
 function log_message(type, message, chat, socket){
     chats[chat]['log'].push( [type, message] );
-    socket.emit('join', message );
-    socket.broadcast.emit('join', message );
+    socket.emit(type, message );
+    socket.broadcast.emit(type, message );
     emitter.emit(type, message);
 }
 
